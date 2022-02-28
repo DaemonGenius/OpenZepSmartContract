@@ -1,5 +1,5 @@
 {
-  "name": "ico-steinnegen",
+  "name": "ico-steinnegen-token-sale-smart-contract",
   "version": "0.0.1",
   "description": "ICO Coin",
   "main": "truffle-config.js",
@@ -12,6 +12,7 @@
   "author": "Christian Steinmann",
   "license": "ISC",
   "dependencies": {
-    "openzeppelin-solidity": "^4.5.0"
+    "openzeppelin-solidity": "^4.5.0",
+    "@DaemonGenius/ico/ico-steinnegen-coin": "https://github.com/DaemonGenius/ico-steinnegen-coin.git"
   }
 }
