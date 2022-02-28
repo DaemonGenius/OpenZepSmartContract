@@ -1,9 +1,9 @@
-var CoinTokenSale = artifacts.require("./CoinSale.sol");
-var CoinToken = artifacts.require("./Coin.sol");
+var SteinnegenSale = artifacts.require("./SteinnegenSale.sol");
+var Steinnegen = artifacts.require("@DaemonGenius/ico/ico-steinnegen-coin/contracts/Steinnegen.sol");
 
-contract("CoinTokenSale", async function (accounts) {
-  let coinTokenSale;
-  let coinToken;
+contract("SteinnegenSale", async function (accounts) {
+  let steinnegenSale;
+  let steinnegen;
   let buyer = accounts[1];
   let admin = accounts[0];
   let tokenPrice = 1000000000000000; //wei
@@ -11,22 +11,22 @@ contract("CoinTokenSale", async function (accounts) {
 
   // before tells our tests to run this first before anything else
   before(async () => {
-    coinTokenSale = await CoinTokenSale.deployed();
+    steinnegenSale = await SteinnegenSale.deployed();
   });
   // before tells our tests to run this first before anything else
   before(async () => {
-    coinToken = await CoinToken.deployed();
+    steinnegen = await Steinnegen.deployed();
   });
 
   it("Initializes the contract with the correct Values", async () => {
-    let address = await coinTokenSale.address;
+    let address = await steinnegenSale.address;
     assert.notEqual(address, 0x0, "Has the correct address");
 
-    let tokenContract = await coinTokenSale.tokenContract();
+    let tokenContract = await steinnegenSale.tokenContract();
 
     assert.notEqual(tokenContract, 0x0, "Has a token correct address");
 
-    let price = await coinTokenSale.tokenPrice();
+    let price = await steinnegenSale.tokenPrice();
 
     assert.equal(price, tokenPrice, "Token price is correct");
   });
@@ -34,11 +34,11 @@ contract("CoinTokenSale", async function (accounts) {
   it("Facilitates token buying", async () => {
     let numberOfTokens = 10;
 
-    let tokenSaleAllocation = coinToken.transfer(coinTokenSale.address, tokensAvailable, {
+    let tokenSaleAllocation = steinnegen.transfer(steinnegenSale.address, tokensAvailable, {
       from: admin,
     });
 
-    let receipt = await coinTokenSale.buyTokens(numberOfTokens, {
+    let receipt = await steinnegenSale.buyTokens(numberOfTokens, {
       from: buyer,
       value: numberOfTokens * tokenPrice,
     });
@@ -59,7 +59,7 @@ contract("CoinTokenSale", async function (accounts) {
       "logs the number of tokens purchased"
     );
 
-    let tokensSold = await coinTokenSale.tokensSold();
+    let tokensSold = await steinnegenSale.tokensSold();
 
     assert.equal(
       tokensSold.toNumber(),
@@ -68,14 +68,14 @@ contract("CoinTokenSale", async function (accounts) {
     );
 
     try {
-      await coinTokenSale.buyTokens(numberOfTokens, { from: buyer, value: 1 });
+      await steinnegenSale.buyTokens(numberOfTokens, { from: buyer, value: 1 });
       assert(false);
     } catch (error) {
       assert(error.message.indexOf("revert") >= 0, error.message);
     }
 
     try {
-      await coinTokenSale.buyTokens(800000, {
+      await steinnegenSale.buyTokens(800000, {
         from: buyer,
         value: numberOfTokens * tokenPrice,
       });
@@ -85,14 +85,14 @@ contract("CoinTokenSale", async function (accounts) {
       console.log(error.message);
     }
 
-    let balance = await coinToken.balanceOf(coinTokenSale.address);
+    let balance = await steinnegen.balanceOf(steinnegenSale.address);
 
     assert.equal(balance.toNumber(), tokensAvailable - numberOfTokens);
   });
 
   it("ends token sale", async () => {
     try {
-      await coinTokenSale.endSale({
+      await steinnegenSale.endSale({
         from: admin,
       });
     } catch (error) {
@@ -100,13 +100,13 @@ contract("CoinTokenSale", async function (accounts) {
       console.log(error.message);
     }
 
-    let balance = await coinToken.balanceOf(admin);
+    let balance = await steinnegen.balanceOf(admin);
 
     assert.equal(balance.toNumber(), 99999990, 'retruns all unsold dapp tokens to admin');
 
 
 
-    let balance2 = await coinToken.balanceOf(coinTokenSale.address);
+    let balance2 = await steinnegen.balanceOf(steinnegenSale.address);
 
     assert.equal(balance2.toNumber(), 0);
 
