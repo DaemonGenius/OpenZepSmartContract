@@ -2,11 +2,11 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 import "openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "openzeppelin-solidity/contracts/security/Pausable.sol";
 import "openzeppelin-solidity/contracts/access/Ownable.sol";
 import "@DaemonGenius/ico/ico-steinnegen-coin/contracts/Steinnegen.sol";
 
-contract SteinnegenSale is ERC20Pausable, Ownable {
+contract SteinnegenSale is Pausable, Ownable {
     address payable private admin;
     Steinnegen public tokenContract;
     uint256 public tokenPrice;
@@ -14,22 +14,28 @@ contract SteinnegenSale is ERC20Pausable, Ownable {
 
     uint256 public totalWeiRaised;
     uint256 public tokensMinted;
-    uint256 public contributors;
+    uint256 public total_contributors;
     uint256 public decimalsMultiplier;
     uint256 public startTime;
     uint256 public endTime;
     uint256 public remainingTokens;
     uint256 public allocatedTokens;
 
+    mapping(address => uint256) contributors;
+
     bool public finalized;
 
-    bool public proofTokensAllocated;
-    address public proofMultiSig = 0x99892Ac6DA1b3851167Cb959fE945926bca89f09;
+    bool public steinnegenTokensAllocated;
+
+    address public steinnegenMultiSig =
+        0x2190dA1687C94045FAD9b9AEeccb3c092dee8Bf9;
+
+    address payable vaultAccount = payable(steinnegenMultiSig);
 
     uint256 public constant BASE_PRICE_IN_WEI = 88000000000000000;
     uint256 public constant PUBLIC_TOKENS = 1181031 * (10**18);
     uint256 public constant TOTAL_PRESALE_TOKENS = 112386712924725508802400;
-    uint256 public constant TOKENS_ALLOCATED_TO_PROOF = 1181031 * (10**18);
+    uint256 public constant TOKENS_ALLOCATED_TO_STEINNEGEN = 1181031 * (10**18);
 
     uint256 public tokenCap = PUBLIC_TOKENS - TOTAL_PRESALE_TOKENS;
     uint256 public cap = tokenCap / (10**18);
@@ -46,12 +52,7 @@ contract SteinnegenSale is ERC20Pausable, Ownable {
     bool public started = false;
 
     event Sell(address _buyer, uint256 _amount);
-    // event TokenPurchase(
-    //     address indexed purchaser,
-    //     address indexed beneficiary,
-    //     uint256 value,
-    //     uint256 amount
-    // );
+
     event OnTransfer(address _from, address _to, uint256 _amount);
     event OnApprove(address _owner, address _spender, uint256 _amount);
     event Finalized();
@@ -82,7 +83,7 @@ contract SteinnegenSale is ERC20Pausable, Ownable {
      * Returns the total Contact token supply
      * @return totalSupply {uint256} Contact Token Total Supply
      */
-    function totalSupply() public override view returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return tokenContract.totalSupply();
     }
 
@@ -91,19 +92,31 @@ contract SteinnegenSale is ERC20Pausable, Ownable {
      * @param _owner {address} Token holder address
      * @return balance {uint256} Corresponding token holder balance
      */
-    function balanceOf(address _owner) public override view returns (uint256) {
+    function balanceOf(address _owner) public view returns (uint256) {
         return tokenContract.balanceOf(_owner);
     }
 
-    function buyTokens(uint256 _numberOfTokens) public payable {
-        require(msg.value == SafeMath.mul(_numberOfTokens, tokenPrice));
+    function buyTokens(address _contributor)
+        public
+        payable
+        whenNotPaused
+        whenNotFinalized
+    {
+        // require(msg.value == SafeMath.mul(_numberOfTokens, tokenPrice));
+        // require(tokenContract.balanceOf(address(this)) >= _numberOfTokens);
+        // require(tokenContract.transfer(msg.sender, _numberOfTokens));
 
-        require(tokenContract.balanceOf(address(this)) >= _numberOfTokens);
+        require(_contributor != address(0));
+        require(_contributor != address(0x0));
 
-        require(tokenContract.transfer(msg.sender, _numberOfTokens));
+        require(validPurchase());
+        total_contributors = SafeMath.add(total_contributors, 1);
+        contributors[_contributor] = msg.value;
+        tokensSold += msg.value;
 
-        tokensSold += _numberOfTokens;
-        emit Sell(msg.sender, _numberOfTokens);
+        emit Sell(msg.sender, msg.value);
+        
+        forwardFunds();
     }
 
     function endSale() public {
@@ -119,15 +132,27 @@ contract SteinnegenSale is ERC20Pausable, Ownable {
         admin.transfer(address(this).balance);
     }
 
+    /**
+     * Validates the purchase (period, minimum amount, within cap)
+     * @return {bool} valid
+     */
+    function validPurchase() internal view returns (bool) {
+        uint256 current = block.timestamp;
+        bool presaleStarted = (current >= startTime || started);
+        bool presaleNotEnded = current <= endTime;
+        bool nonZeroPurchase = msg.value != 0;
+        return nonZeroPurchase && presaleStarted && presaleNotEnded;
+    }
+
     function enableTransfers() public {
         if (block.timestamp < endTime) {
-            require(msg.sender == owner);
+            require(msg.sender == owner());
         }
         tokenContract.enableTransfers(true);
     }
 
     function lockTransfers() public onlyOwner {
-        require(now < endTime);
+        require(block.timestamp < endTime);
         tokenContract.enableTransfers(false);
     }
 
@@ -143,19 +168,26 @@ contract SteinnegenSale is ERC20Pausable, Ownable {
         started = true;
     }
 
-    function allocateProofTokens() public onlyOwner whenNotFinalized {
-        require(!proofTokensAllocated);
-        tokenContract.mint(proofMultiSig, TOKENS_ALLOCATED_TO_PROOF);
-        proofTokensAllocated = true;
+    function allocateSteinnegenTokens() public onlyOwner whenNotFinalized {
+        require(!steinnegenTokensAllocated);
+        tokenContract.mint(steinnegenMultiSig, TOKENS_ALLOCATED_TO_STEINNEGEN);
+        steinnegenTokensAllocated = true;
+    }
+
+    /**
+     * Forwards funds to the tokensale wallet
+     */
+    function forwardFunds() internal {
+        vaultAccount.transfer(msg.value);
     }
 
     function finalize() public onlyOwner {
-        require(paused);
-        require(proofTokensAllocated);
+        require(paused());
+        require(steinnegenTokensAllocated);
 
         tokenContract.finishMinting();
         tokenContract.enableTransfers(true);
-        Finalized();
+        emit Finalized();
 
         finalized = true;
     }

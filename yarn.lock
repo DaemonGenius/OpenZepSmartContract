@@ -4,7 +4,7 @@
 
 "@DaemonGenius/ico/ico-steinnegen-coin@https://github.com/DaemonGenius/ico-steinnegen-coin.git":
   version "0.0.1"
-  resolved "https://github.com/DaemonGenius/ico-steinnegen-coin.git#95dd33db2cf57c1ca8838b24ef71432e03f56bd7"
+  resolved "https://github.com/DaemonGenius/ico-steinnegen-coin.git#0ebab8ca964535381e2df93016a8f2c562554e41"
   dependencies:
     openzeppelin-solidity "^4.5.0"
 

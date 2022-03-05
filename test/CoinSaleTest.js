@@ -31,6 +31,9 @@ contract("SteinnegenSale", async function (accounts) {
     assert.equal(price, tokenPrice, "Token price is correct");
   });
 
+
+  
+
   it("Facilitates token buying", async () => {
     let numberOfTokens = 10;
 
@@ -111,5 +114,27 @@ contract("SteinnegenSale", async function (accounts) {
     assert.equal(balance2.toNumber(), 0);
 
    
+  });
+
+  it("Stops Token sale", async () => {
+    try {
+      await steinnegenSale.finalize();
+    } catch (error) {
+      assert(error.message.indexOf("revert") >= 0, "Must be an admin");
+      console.log(error.message);
+    }
+
+    let balance = await steinnegen.balanceOf(admin);
+    assert.equal(balance.toNumber(), 99999990, 'retruns all unsold dapp tokens to admin');
+
+    let balance2 = await steinnegen.balanceOf(steinnegenSale.address);
+    assert.equal(balance2.toNumber(), 0);
+
+    try {
+      await steinnegenSale.buyTokens(numberOfTokens, { from: buyer, value: 1 });
+      assert(false);
+    } catch (error) {
+      assert(error.message.indexOf("revert") >= 0, error.message);
+    }
   });
 });
