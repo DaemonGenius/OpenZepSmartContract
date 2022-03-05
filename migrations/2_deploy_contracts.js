@@ -32,7 +32,7 @@ module.exports = async (deployer) => {
     SteinnegenSale,
     Steinnegen.address,
     tokenPrice,
-    1654452435, // November 1st 1PM GMT: 1509541200
+    1644084435, // November 1st 1PM GMT: 1509541200
     1659722835, // December 1st 1PM GMT: 1512133200
     { gas: gas, gasPrice: gasPrice }
   );

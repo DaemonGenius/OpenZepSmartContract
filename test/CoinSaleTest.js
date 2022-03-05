@@ -1,5 +1,7 @@
 var SteinnegenSale = artifacts.require("./SteinnegenSale.sol");
-var Steinnegen = artifacts.require("@DaemonGenius/ico/ico-steinnegen-coin/contracts/Steinnegen.sol");
+var Steinnegen = artifacts.require(
+  "@DaemonGenius/ico/ico-steinnegen-coin/contracts/Steinnegen.sol"
+);
 
 contract("SteinnegenSale", async function (accounts) {
   let steinnegenSale;
@@ -31,15 +33,25 @@ contract("SteinnegenSale", async function (accounts) {
     assert.equal(price, tokenPrice, "Token price is correct");
   });
 
+  it("should reject payments before start", async function () {
 
-  
+    let receipt = await steinnegenSale.buyTokens(buyer, {
+      value: 10,
+      from: buyer,
+    });
+    let receipt_send = await steinnegenSale.send(10, { from: buyer });
+  });
 
   it("Facilitates token buying", async () => {
     let numberOfTokens = 10;
 
-    let tokenSaleAllocation = steinnegen.transfer(steinnegenSale.address, tokensAvailable, {
-      from: admin,
-    });
+    let tokenSaleAllocation = steinnegen.transfer(
+      steinnegenSale.address,
+      tokensAvailable,
+      {
+        from: admin,
+      }
+    );
 
     let receipt = await steinnegenSale.buyTokens(numberOfTokens, {
       from: buyer,
@@ -105,15 +117,15 @@ contract("SteinnegenSale", async function (accounts) {
 
     let balance = await steinnegen.balanceOf(admin);
 
-    assert.equal(balance.toNumber(), 99999990, 'retruns all unsold dapp tokens to admin');
-
-
+    assert.equal(
+      balance.toNumber(),
+      99999990,
+      "retruns all unsold dapp tokens to admin"
+    );
 
     let balance2 = await steinnegen.balanceOf(steinnegenSale.address);
 
     assert.equal(balance2.toNumber(), 0);
-
-   
   });
 
   it("Stops Token sale", async () => {
@@ -125,7 +137,11 @@ contract("SteinnegenSale", async function (accounts) {
     }
 
     let balance = await steinnegen.balanceOf(admin);
-    assert.equal(balance.toNumber(), 99999990, 'retruns all unsold dapp tokens to admin');
+    assert.equal(
+      balance.toNumber(),
+      99999990,
+      "retruns all unsold dapp tokens to admin"
+    );
 
     let balance2 = await steinnegen.balanceOf(steinnegenSale.address);
     assert.equal(balance2.toNumber(), 0);
