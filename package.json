@@ -13,6 +13,6 @@
   "license": "ISC",
   "dependencies": {
     "openzeppelin-solidity": "^4.5.0",
-    "@DaemonGenius/ico/ico-steinnegen-coin": "https://github.com/DaemonGenius/ico-steinnegen-coin.git"
+    "@DaemonGenius/ico/ico-steinnegen-coin": "https://github.com/DaemonGenius/ico-steinnegen-coin.git#feature/improved_steinnegen"
   }
 }
